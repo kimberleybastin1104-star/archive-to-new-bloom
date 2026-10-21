@@ -6,7 +6,7 @@ describe('cycle summary data', () => {
   it('includes supplied cycle dates and check-in notes', () => {
     const result = cycleSummarySchema.parse(input);
     expect(result.periods[0]).toEqual({ startDate: '2026-10-01', endDate: '2026-10-05' });
-    expect(result.checkIns[0].notes).toBe('Cramps again');
+    expect(result.checkIns[0]?.notes).toBe('Cramps again');
   });
   it('requires permission before AI processing', () => {
     expect(cycleSummarySchema.safeParse({ ...input, consent: false }).success).toBe(false);

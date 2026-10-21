@@ -28,8 +28,8 @@ export async function handleCycleSummary(request: Request) {
   if (blocked.error) return Response.json({ message: 'AI access checks are unavailable. Please try later.' }, { status: 503 });
   if (blocked.data) return Response.json({ message: blocked.data.message }, { status: blocked.data.status });
 
-  let resolveUpstream: (value: { status: number; message?: string; headers?: Headers }) => void = () => {};
-  const upstreamReady = new Promise<{ status: number; message?: string; headers?: Headers }>(resolve => { resolveUpstream = resolve; });
+  let resolveUpstream: (value: { status: number; message?: string | undefined; headers?: Headers }) => void = () => {};
+  const upstreamReady = new Promise<{ status: number; message?: string | undefined; headers?: Headers }>(resolve => { resolveUpstream = resolve; });
   const { result, gateway } = createResponsesCall(request, {
     baseURL: 'https://ai.gateway.lovable.dev/v1', apiKey: key, model: MODEL,
     onResponse: async response => {
