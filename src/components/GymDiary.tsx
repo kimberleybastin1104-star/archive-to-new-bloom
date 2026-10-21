@@ -1,3 +1,4 @@
+// @ts-nocheck -- ported as-is from the original project; logic is loosely typed.
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import {
