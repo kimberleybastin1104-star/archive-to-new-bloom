@@ -1,5 +1,6 @@
 // @ts-nocheck -- ported as-is from the original project; logic is loosely typed.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { buildBackup, readBackup } from '@/lib/diary-backup';
 import { Link, useRouterState } from '@tanstack/react-router';
 import {
   Activity, ArrowRight, BookHeart, CalendarDays, Check, CheckCircle2,
@@ -60,8 +61,15 @@ const safeLoad = () => {
   try {
     const stored = localStorage.getItem('gym-diary-planner-v1');
     if (!stored) return freshState();
-    const parsed: Record<string, any> = JSON.parse(stored);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return freshState();
+    return normalizeDiary(JSON.parse(stored));
+  } catch {
+    return freshState();
+  }
+};
+
+export function normalizeDiary(parsed: any) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Not a diary');
+  {
     const base: Record<string, any> = freshState();
     const value = { ...base, ...parsed };
     for (const key of ['weekly', 'workoutDraft', 'habits', 'goals', 'nutrition', 'measurements', 'cardio', 'cycle', 'wellbeing', 'monthly', 'shopping']) {
@@ -93,16 +101,37 @@ const safeLoad = () => {
     if (!value.cycle.checkInDraft || typeof value.cycle.checkInDraft !== 'object') value.cycle.checkInDraft = base.cycle.checkInDraft;
     if (!Array.isArray(value.cycle.checkInDraft.symptoms)) value.cycle.checkInDraft.symptoms = [];
     return value;
-  } catch {
-    return freshState();
   }
-};
+}
 
 function App() {
   const location = useRouterState({ select: (s) => s.location.pathname });
   const [data, setData] = useState<any>(safeLoad);
   const [moreOpen, setMoreOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const fileInput = useRef<HTMLInputElement>(null);
+  const exportDiary = () => {
+    const blob = new Blob([JSON.stringify(buildBackup(data), null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `gym-diary-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    setToast('Backup saved to your device.');
+  };
+  const importDiary = async (file?: File) => {
+    if (!file) return;
+    try {
+      const restored = normalizeDiary(readBackup(await file.text()));
+      if (window.confirm('Replace everything in this diary with the backup? This cannot be undone.')) {
+        setData(restored);
+        setToast('Diary restored from your backup.');
+      }
+    } catch {
+      setToast("That file doesn't look like a Gym Diary backup.");
+    }
+    if (fileInput.current) fileInput.current.value = '';
+  };
   useEffect(() => {
     try { localStorage.setItem('gym-diary-planner-v1', JSON.stringify(data)); } catch { setToast('Could not save. Your device storage may be full.'); }
   }, [data]);
@@ -168,7 +197,7 @@ function App() {
       <div className="privacy-note"><Heart size={15} /><strong>Just for you</strong>Everything here stays on this device, in your browser. No account, no cloud.</div>
     </aside>
     <div className="main-area">
-      <header className="topbar"><span className="date-label">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span><div className="top-actions"><span className="tiny-status"><span style={{ color: 'var(--rose)' }}>●</span> Saved on this device</span><span className="script">one day at a time</span></div></header>
+      <header className="topbar"><span className="date-label">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span><div className="top-actions"><span className="tiny-status"><span style={{ color: 'var(--rose)' }}>●</span> Saved on this device</span><button type="button" className="btn small" onClick={exportDiary}>Export backup</button><button type="button" className="btn small" onClick={() => fileInput.current?.click()}>Import backup</button><input ref={fileInput} type="file" accept="application/json,.json" hidden aria-label="Import backup file" onChange={(e) => importDiary(e.target.files?.[0])} /><span className="script">one day at a time</span></div></header>
       <main className="content">
         <Page page={activePath} data={data} update={update} setPath={setPath} setTop={setTop} saveWorkout={saveWorkout} resetHabits={resetHabits} notify={setToast} loggedThisWeek={loggedThisWeek} />
       </main>
