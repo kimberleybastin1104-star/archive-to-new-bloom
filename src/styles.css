@@ -196,3 +196,13 @@ h1 { color:var(--ink); font:500 clamp(38px,5vw,56px)/.98 var(--app-font-serif); 
 .cover-card .hero-actions { position:absolute; z-index:2; }
 .page-banner { display:block; width:100%; height:170px; object-fit:cover; border-radius:22px; margin-bottom:22px; box-shadow:var(--shadow); }
 @media (max-width: 760px) { .page-banner { height:120px; } }
+
+.cycle-insights { margin-top:24px; padding:24px 0; border-top:1px solid var(--line); }
+.insights-consent { display:flex; align-items:flex-start; gap:10px; font-size:13px; line-height:1.6; }
+.insights-consent input { flex-shrink:0; margin-top:5px; accent-color:var(--rose); }
+.insights-disclaimer { font-size:12px; line-height:1.6; }
+.insights-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.insights-actions .btn { white-space:normal; height:auto; }
+.insights-error { color:hsl(var(--destructive)); }
+.insights-result { margin-top:20px; line-height:1.75; overflow-wrap:anywhere; white-space:pre-wrap; }
+.insights-result > p { font-size:12px; }

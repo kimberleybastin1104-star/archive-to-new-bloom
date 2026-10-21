@@ -1,0 +1,2 @@
+- [ ] Add consent-based streamed cycle pattern summaries through AI Gateway.
+- [ ] Validate privacy, errors, cancellation, and real summary generation.
