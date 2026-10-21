@@ -1,5 +1,17 @@
 // @ts-nocheck -- ported as-is from the original project; logic is loosely typed.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import coverImg from '@/assets/cover.jpg';
+import workoutImg from '@/assets/workout.jpg';
+import foodImg from '@/assets/food.jpg';
+import mindImg from '@/assets/mind.jpg';
+const BANNERS: Record<string, [string, string]> = {
+  '/workout-tracker': [workoutImg, 'Pink dumbbells beside a diary and water bottle'],
+  '/glute-focus': [workoutImg, 'Pink dumbbells beside a diary and water bottle'],
+  '/nutrition-tracker': [foodImg, 'Yogurt bowl with berries and a glass of water'],
+  '/meal-planner': [foodImg, 'Yogurt bowl with berries and a glass of water'],
+  '/wellbeing': [mindImg, 'Journal, tea and a candle on a cosy bed'],
+  '/notes-thoughts': [mindImg, 'Journal, tea and a candle on a cosy bed'],
+};
 import { buildBackup, readBackup } from '@/lib/diary-backup';
 import { Link, useRouterState } from '@tanstack/react-router';
 import {
@@ -199,6 +211,7 @@ function App() {
     <div className="main-area">
       <header className="topbar"><span className="date-label">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span><div className="top-actions"><span className="tiny-status"><span style={{ color: 'var(--rose)' }}>●</span> Saved on this device</span><button type="button" className="btn small" onClick={exportDiary}>Export backup</button><button type="button" className="btn small" onClick={() => fileInput.current?.click()}>Import backup</button><input ref={fileInput} type="file" accept="application/json,.json" hidden aria-label="Import backup file" onChange={(e) => importDiary(e.target.files?.[0])} /><span className="script">one day at a time</span></div></header>
       <main className="content">
+        {BANNERS[activePath] && <img className="page-banner" src={BANNERS[activePath][0]} alt={BANNERS[activePath][1]} width={1600} height={560} />}
         <Page page={activePath} data={data} update={update} setPath={setPath} setTop={setTop} saveWorkout={saveWorkout} resetHabits={resetHabits} notify={setToast} loggedThisWeek={loggedThisWeek} />
       </main>
     </div>
@@ -242,7 +255,7 @@ function Page({ page, data, update, setPath, setTop, saveWorkout, resetHabits, n
 
   if (page === '/weekly-plan') return <>
     <Heading eyebrow="Your week, gently mapped out" title="Weekly plan" subtitle="A plan is a guide, not a rulebook." />
-    <div className="cover-card"><div className="eyebrow" style={{ color: '#f8e2e9' }}>THIS WEEK, YOUR WAY</div><div className="cover-title">Stronger body ·<br />Happier mind.</div><div className="script" style={{ color: '#fff0f2' }}>a week worth showing up for</div>
+    <div className="cover-card"><img className="cover-photo" src={coverImg} alt="" width={1600} height={704} /><div className="eyebrow" style={{ color: '#f8e2e9' }}>THIS WEEK, YOUR WAY</div><div className="cover-title">Stronger body ·<br />Happier mind.</div><div className="script" style={{ color: '#fff0f2' }}>a week worth showing up for</div>
       <div className="cover-stats"><div><b>{loggedThisWeek}</b><span>workouts this week</span></div><div><b>{workouts.length}</b><span>workouts logged</span></div></div>
       <div className="hero-actions"><Link to="/workout-tracker" className="btn" style={{ background: '#fff8f2', color: '#8e4f67', border: 0 }}>Log a workout <ArrowRight size={15} /></Link></div>
     </div>
