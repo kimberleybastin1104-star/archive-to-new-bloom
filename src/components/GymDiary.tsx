@@ -60,7 +60,7 @@ const freshState = () => ({
     periodLength: '5',
     periodStartInput: new Date().toISOString().slice(0, 10),
     periods: [],
-    checkInDraft: { date: new Date().toISOString().slice(0, 10), flow: '', mood: '', symptoms: [], notes: '' },
+    checkInDraft: { date: new Date().toISOString().slice(0, 10), periodEnd: '', flow: '', mood: '', symptoms: [], notes: '' },
     checkIns: [],
   },
   wellbeing: { date: new Date().toISOString().slice(0, 10), gratitude: '', mood: '', happy: '', improve: '' },
@@ -112,6 +112,7 @@ export function normalizeDiary(parsed: any) {
     if (!Array.isArray(value.cycle.checkIns)) value.cycle.checkIns = [];
     if (!value.cycle.checkInDraft || typeof value.cycle.checkInDraft !== 'object') value.cycle.checkInDraft = base.cycle.checkInDraft;
     if (!Array.isArray(value.cycle.checkInDraft.symptoms)) value.cycle.checkInDraft.symptoms = [];
+    if (value.cycle.checkInDraft.periodEnd == null) value.cycle.checkInDraft.periodEnd = '';
     return value;
   }
 }
@@ -371,10 +372,15 @@ function Page({ page, data, update, setPath, setTop, saveWorkout, resetHabits, n
     const saveCheckIn = () => {
       const draft = data.cycle.checkInDraft;
       if (!draft.date) return notify('Choose a date for this check-in.');
+      if (draft.periodEnd && draft.periodEnd < draft.date) return notify('The period end date can't be before the check-in date.');
       const existing = checkIns.find((entry: any) => entry.date === draft.date);
       const entry = { ...draft, id: existing?.id ?? Date.now() };
       update('cycle', 'checkIns', [entry, ...checkIns.filter((item: any) => item.date !== draft.date)]);
-      update('cycle', 'checkInDraft', { date: today, flow: '', mood: '', symptoms: [], notes: '' });
+      if (draft.periodEnd) {
+        const match = periods.find((period: any) => period.startDate <= draft.date && (!period.endDate || period.endDate < draft.periodEnd));
+        if (match) update('cycle', 'periods', periods.map((item: any) => item.id === match.id ? { ...item, endDate: draft.periodEnd } : item));
+      }
+      update('cycle', 'checkInDraft', { date: today, periodEnd: '', flow: '', mood: '', symptoms: [], notes: '' });
       notify('Cycle check-in saved.');
     };
     return <>
