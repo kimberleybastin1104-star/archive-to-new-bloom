@@ -60,7 +60,7 @@ const freshState = () => ({
     periodLength: '5',
     periodStartInput: new Date().toISOString().slice(0, 10),
     periods: [],
-    checkInDraft: { date: new Date().toISOString().slice(0, 10), flow: '', mood: '', symptoms: [], notes: '' },
+    checkInDraft: { date: new Date().toISOString().slice(0, 10), periodEnd: '', flow: '', mood: '', symptoms: [], notes: '' },
     checkIns: [],
   },
   wellbeing: { date: new Date().toISOString().slice(0, 10), gratitude: '', mood: '', happy: '', improve: '' },
@@ -112,6 +112,7 @@ export function normalizeDiary(parsed: any) {
     if (!Array.isArray(value.cycle.checkIns)) value.cycle.checkIns = [];
     if (!value.cycle.checkInDraft || typeof value.cycle.checkInDraft !== 'object') value.cycle.checkInDraft = base.cycle.checkInDraft;
     if (!Array.isArray(value.cycle.checkInDraft.symptoms)) value.cycle.checkInDraft.symptoms = [];
+    if (value.cycle.checkInDraft.periodEnd == null) value.cycle.checkInDraft.periodEnd = '';
     return value;
   }
 }
@@ -371,10 +372,15 @@ function Page({ page, data, update, setPath, setTop, saveWorkout, resetHabits, n
     const saveCheckIn = () => {
       const draft = data.cycle.checkInDraft;
       if (!draft.date) return notify('Choose a date for this check-in.');
+      if (draft.periodEnd && draft.periodEnd < draft.date) return notify('The period end date can’t be before the check-in date.');
       const existing = checkIns.find((entry: any) => entry.date === draft.date);
       const entry = { ...draft, id: existing?.id ?? Date.now() };
       update('cycle', 'checkIns', [entry, ...checkIns.filter((item: any) => item.date !== draft.date)]);
-      update('cycle', 'checkInDraft', { date: today, flow: '', mood: '', symptoms: [], notes: '' });
+      if (draft.periodEnd) {
+        const match = periods.find((period: any) => period.startDate <= draft.date && (!period.endDate || period.endDate < draft.periodEnd));
+        if (match) update('cycle', 'periods', periods.map((item: any) => item.id === match.id ? { ...item, endDate: draft.periodEnd } : item));
+      }
+      update('cycle', 'checkInDraft', { date: today, periodEnd: '', flow: '', mood: '', symptoms: [], notes: '' });
       notify('Cycle check-in saved.');
     };
     return <>
@@ -419,6 +425,7 @@ function Page({ page, data, update, setPath, setTop, saveWorkout, resetHabits, n
       <div className="grid two-col" style={{ marginTop: 16 }}>
         <Card title="Cycle check-in" icon={Heart}>
           <Input label="Date" type="date" value={data.cycle.checkInDraft.date} onChange={(value: string) => update('cycle', 'checkInDraft', { ...data.cycle.checkInDraft, date: value })} data-testid="input-cycle-checkin-date" />
+          <Input label="Period end date (optional)" type="date" min={data.cycle.checkInDraft.date} value={data.cycle.checkInDraft.periodEnd} onChange={(value: string) => update('cycle', 'checkInDraft', { ...data.cycle.checkInDraft, periodEnd: value })} data-testid="input-cycle-checkin-period-end" />
           <label className="field" style={{ marginTop: 13 }}><span>Flow</span>
             <select className="input" value={data.cycle.checkInDraft.flow} onChange={(event) => update('cycle', 'checkInDraft', { ...data.cycle.checkInDraft, flow: event.target.value })} data-testid="select-cycle-flow">
               <option value="">Choose if relevant</option><option value="Spotting">Spotting</option><option value="Light">Light</option><option value="Medium">Medium</option><option value="Heavy">Heavy</option>
@@ -435,7 +442,7 @@ function Page({ page, data, update, setPath, setTop, saveWorkout, resetHabits, n
         <Card title="Recent check-ins" icon={BookHeart}>
           {checkIns.length ? checkIns.slice(0, 8).map((entry: any) => <div className="day-row" key={entry.id}>
             <div style={{ flex: 1 }}><strong>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</strong>
-              <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{[entry.flow, entry.mood, ...(entry.symptoms ?? [])].filter(Boolean).join(' · ') || 'Check-in saved'}{entry.notes ? ` — ${entry.notes}` : ''}</div>
+              <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{[entry.flow, entry.mood, ...(entry.symptoms ?? [])].filter(Boolean).join(' · ') || 'Check-in saved'}{entry.periodEnd ? ` — Period ended ${new Date(`${entry.periodEnd}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : ''}{entry.notes ? ` — ${entry.notes}` : ''}</div>
             </div>
             <button className="icon-btn" onClick={() => update('cycle', 'checkIns', checkIns.filter((item: any) => item.id !== entry.id))} aria-label="Remove cycle check-in" data-testid={`button-remove-cycle-checkin-${entry.id}`}><Trash2 size={15} /></button>
           </div>) : <div className="empty-note">Your check-ins stay private here and will show up as you add them.</div>}
