@@ -1,5 +1,6 @@
 // @ts-nocheck -- ported as-is from the original project; logic is loosely typed.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { CycleInsights } from './CycleInsights';
 import coverImg from '@/assets/cover.jpg';
 import workoutImg from '@/assets/workout.jpg';
 import foodImg from '@/assets/food.jpg';
@@ -207,7 +208,7 @@ function App() {
       <div className="nav-caption">The everyday</div>{primary.map((item) => navLink(item))}
       <div className="nav-caption">A little more</div>
       {others.map((item) => navLink(item))}
-      <div className="privacy-note"><Heart size={15} /><strong>Just for you</strong>Everything here stays on this device, in your browser. No account, no cloud.</div>
+      <div className="privacy-note"><Heart size={15} /><strong>Just for you</strong>Your diary is saved on this device. Cycle entries are sent to AI only when you agree and request a summary.</div>
     </aside>
     <div className="main-area">
       <header className="topbar"><span className="date-label">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span><div className="top-actions"><span className="tiny-status"><span style={{ color: 'var(--rose)' }}>●</span> Saved on this device</span><button type="button" className="btn small" onClick={exportDiary}>Export backup</button><button type="button" className="btn small" onClick={() => fileInput.current?.click()}>Import backup</button><input ref={fileInput} type="file" accept="application/json,.json" hidden aria-label="Import backup file" onChange={(e) => importDiary(e.target.files?.[0])} /><span className="script">one day at a time</span></div></header>
@@ -448,6 +449,7 @@ function Page({ page, data, update, setPath, setTop, saveWorkout, resetHabits, n
           </div>) : <div className="empty-note">Your check-ins stay private here and will show up as you add them.</div>}
         </Card>
       </div>
+      <CycleInsights cycle={data.cycle} />
     </>;
   }
 
